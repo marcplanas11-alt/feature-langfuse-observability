@@ -1,31 +1,31 @@
-from langfuse import Langfuse
+from langfuse.openai import openai
 
-langfuse = Langfuse()
-
-claim_text = "Water damage discovered after long-term leakage."
-
-trace = langfuse.trace(
-    name="claims-triage-workflow",
-    input={"claim": claim_text},
+completion = openai.chat.completions.create(
+    name="claims-triage-langfuse-test",
+    model="gpt-4o-mini",
+    messages=[
+        {
+            "role": "system",
+            "content": (
+                "You are an insurance claims triage assistant. "
+                "Do not confirm coverage. Identify likely claim type, "
+                "missing information, and whether human review is required."
+            ),
+        },
+        {
+            "role": "user",
+            "content": (
+                "Water damage discovered after long-term leakage under the kitchen floor. "
+                "The claimant asks whether this is covered."
+            ),
+        },
+    ],
+    metadata={
+        "workflow": "claims-triage",
+        "prompt_version": "v1",
+        "use_case": "insurance-claims",
+    },
 )
 
-generation = trace.generation(
-    name="claim-analysis",
-    model="gpt-4",
-    input=claim_text,
-)
-
-response = """
-Coverage may be excluded because the wording excludes gradual leakage over time.
-Recommend underwriting review.
-"""
-
-generation.end(
-    output=response
-)
-
-trace.update(
-    output={"result": response}
-)
-
-print("Trace sent to Langfuse successfully.")
+print(completion.choices[0].message.content)
+print("Trace sent to Langfuse.")
